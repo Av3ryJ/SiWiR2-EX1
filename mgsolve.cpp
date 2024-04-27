@@ -30,7 +30,11 @@ int main(int argc, char* argv[]) {
     test->printGrid();
     Grid *small = test->restrict();
     small->printGrid();
+
+    Grid *big = small->interpolate();
+    big->printGrid();
     delete test;
     delete small;
+    delete big;
     return 0;
 }

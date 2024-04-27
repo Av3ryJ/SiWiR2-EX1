@@ -31,7 +31,7 @@ void Grid::printGrid() {
     for (int y = 0; y < size_; y++) {
         for (int x = 0; x < size_; x++) {
             int absolute_position = x + (size_*y);
-            std::cout << this->data_[absolute_position] << std::setprecision(2) << " ";
+            std::cout << this->data_[absolute_position] << std::setprecision(2) << "\t";
         }
         std::cout << std::endl;
     }
@@ -61,6 +61,44 @@ void Grid::weightedRestriction(Grid *bigger, int size_big) {
                                         //self
                                   + 0.5 * (big_d[positionBig]);
             this->data_[absolute_position_small] = weighted_sum;
+        }
+    }
+}
+
+Grid *Grid::interpolate() {
+    Grid *bigger = new Grid(this->level_+1);
+    bigger->interpolation(this, this->size_);
+    return bigger;
+}
+
+void Grid::interpolation(Grid *smaller, int size_small) {
+    // go over smaller grid and copy/interpolate to big one
+    bool xOdd = true;
+    double *small_d = smaller->data_;
+    // Willst du hier x und y vertauschen, vertausche auch die x,yOdd änderung unten in der schleife!!!!!!!
+    for (int x = 1; x < size_-1; x++, xOdd = !xOdd) {
+        bool yOdd = true;
+        for (int y = 1; y < size_-1; y++, yOdd = !yOdd) {
+            int positionBig = x + (size_ * y);
+            double value;
+            if (xOdd) {
+                if (yOdd) { //both odd -> btw 4
+                                    // top left                                     bottom left
+                    value = 0.25 * (small_d[(x-1 + (size_small*(y-1)))/2] + small_d[(x+1 + (size_small*(y-1)))/2]
+                                    // bottom right                                 top right
+                            + small_d[(x-1 + (size_small*(y+1)))/2] + small_d[(x+1 + (size_small*(y+1)))/2]);
+                }
+                else { // xOdd, yEven -> horizontal btw 2
+                    value = 0.5 * (small_d[((x-1) + (size_small * y))/2] + small_d[((x+1) + (size_small * y))/2]);
+                }
+            }
+            else if (yOdd) { // xEven, yOdd -> vertical btw 2
+                value = 0.5 * (small_d[(x + (size_small * (y-1)))/2] + small_d[(x + (size_small * (y+1)))/2]);
+            }
+            else { //both even -> on point
+                value = small_d[x/2 + (size_small * y/2)];
+            }
+            this->data_[positionBig] = value;
         }
     }
 }

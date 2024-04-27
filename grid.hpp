@@ -7,10 +7,16 @@ public:
     double *data_;
 
     explicit Grid(int lvl);
+
     int getSize() const;
     void printGrid();
+
     Grid *restrict();
     void weightedRestriction(Grid *bigger, int size_big);
+
+    Grid *interpolate();
+    void interpolation(Grid *smaller, int size_small);
+
     ~Grid();
 private:
     int level_;
