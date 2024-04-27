@@ -12,12 +12,11 @@ public:
     void printGrid();
 
     Grid *restrict();
-    void weightedRestriction(Grid *bigger, int size_big);
+    void weightedRestriction(Grid *bigger);
 
     Grid *interpolate();
-    void interpolation(Grid *smaller, int size_small);
+    void interpolation(Grid *smaller);
 
-    //TODO: Function returning residual r
     //TODO: Function returning convergence factor q
 
     ~Grid();
