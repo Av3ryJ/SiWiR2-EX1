@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cmath>
 
 #include "grid.hpp"
@@ -45,8 +46,8 @@ int main(int argc, char* argv[]) {
     //  0 0 0
     // .. .. ..
 
-    //x und y Werte müssen in dem definierten Bereich liegen -> [0,1] und[0,2]
-    ofstream fileO ("solution.txt");
+    //x und y Werte müssen in dem definierten Bereich liegen -> [0,1] und [0,1]
+    std::ofstream fileO("solution.txt");
     fileO << "# x y u(x,y)"<< std::endl;
     int gridsize = 17; //TODO: change to correct grid size (grid->getSize())
     int stepsize = 17; //TODO: change to correct step size (grid->getStepSize())
