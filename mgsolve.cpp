@@ -36,5 +36,9 @@ int main(int argc, char* argv[]) {
     delete test;
     delete small;
     delete big;
+
+    //TODO: Implement proper V-Cycles (aka implement gaus seidel again..)
+    //TODO: write to output file (gnuplot aka steal from last year)
+
     return 0;
 }

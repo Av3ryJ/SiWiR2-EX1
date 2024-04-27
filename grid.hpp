@@ -17,6 +17,9 @@ public:
     Grid *interpolate();
     void interpolation(Grid *smaller, int size_small);
 
+    //TODO: Function returning residual r
+    //TODO: Function returning convergence factor q
+
     ~Grid();
 private:
     int level_;
