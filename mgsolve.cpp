@@ -38,7 +38,24 @@ int main(int argc, char* argv[]) {
     delete big;
 
     //TODO: Implement proper V-Cycles (aka implement gaus seidel again..)
-    //TODO: write to output file (gnuplot aka steal from last year)
+
+
+    // === Output ===
+    // # x y u(x,y)
+    //  0 0 0
+    // .. .. ..
+
+    //x und y Werte müssen in dem definierten Bereich liegen -> [0,1] und[0,2]
+    ofstream fileO ("solution.txt");
+    fileO << "# x y u(x,y)"<< std::endl;
+    int gridsize = 17; //TODO: change to correct grid size (grid->getSize())
+    int stepsize = 17; //TODO: change to correct step size (grid->getStepSize())
+    for (int col = 0; col < gridsize; col++) {
+        for (int row = 0; row < gridsize; row++) {
+            fileO << col*stepsize << " " << row*stepsize << " " << endl; //TODO: << grid->data_[row*stepsize + col] << endl;
+        }
+    }
+    fileO.close();
 
     return 0;
 }
