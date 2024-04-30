@@ -25,7 +25,7 @@ double l2_norm(double *data, double *rhs, int gridsize, double stepsize) {
     double factor = 1.0/(inner_points*inner_points); 
     return sqrt(factor*sum);
 }
-void calculate_residuum(double *res, double *data, double *rhs, int gridsize, int stepsize){
+void calculate_residuum(double *res, double *data, double *rhs, int gridsize, double stepsize){
     double alpha = 4.0/(stepsize*stepsize);
     double beta = 1.0/(stepsize*stepsize);
     for (int row = 1; row < gridsize-1; row++) {
@@ -67,18 +67,18 @@ void addInterpolation(double *data,double *interpol, int gridsize){
     int gridsize = (int) pow(2,lvl) + 1;
     double stepsize = 1./(gridsize-1);
 
-    // Presmoothing of Au = b -->uh = Gauss-Seidel(uh, f, h)
+    // Presmoothing of Au = b -->uh = Gauss-Seidel(uh, f, h), TODO: laut Aufgabe 2 mal?
     gauss_seidel_smoother(u, rhs, gridsize, stepsize);
 
     //Compute Residual r = b-Auh 
-     Grid *res = new Grid(lvl, true);
+     Grid *res = new Grid(lvl, false, false);
      calculate_residuum(res->data_, u, rhs, gridsize, stepsize);
 
     //restrict residual to level l-1  
     Grid *restricted = res->restrict();
 
     //leeres Gitter anlegen eps--> so groß wie restricted size //set u=0 on l-1 --> auch Randbedingungen werden 0
-    Grid *eps = new Grid(lvl-1, false); //hier muss alles 0 sein!
+    Grid *eps = new Grid(lvl-1, false, true); //hier muss alles 0 sein!
 
     // Abbruchbedingung Rekursion: wenn kleinste Gittergröße erreicht ist
     //sonst: eps = V-Cycle(leeres Gitter eps, restricted Gitter, 2*h) --> Rekursion
@@ -115,35 +115,34 @@ int main(int argc, char* argv[]) {
     double step_size = 1./(grid_size-1);
     cout << "Level: " << lvl << "  Iterations: " << iterations << "  N: " << number_of_unknowns << "  h: " << step_size << endl;
 
-    //initialize right-hand side values
+    //right-hand side vector
     double *rhs = new double[grid_size*grid_size];
+    // Grid with solution
+    Grid *solution = new Grid(lvl, true, false);
+    //initialize both rhs and solution
     for (int y = 0; y < grid_size; y++) {
         for (int x = 0; x < grid_size; x++) {
             rhs[x + y*grid_size] =2*M_PI*M_PI*cos(M_PI*x*step_size)*cos(M_PI*y*step_size);
+            solution->data_[x + y * grid_size] = cos(M_PI * x * step_size) * cos(M_PI * y * step_size);
         }
     }
 
     // ===== TESTS =====
-    Grid *test = new Grid(lvl, true);
-    test->printGrid();
 
-    multigrid(test->data_, rhs, lvl);
+    Grid *grid = new Grid(lvl, true, true);
+    grid->printGrid();
 
-    //Grid *small = test->restrict();
-    //small->printGrid();
+    // TODO: start timing
+    //perform given number of iterations
+    for (int i = 0; i < iterations; i++) {
+        multigrid(grid->data_, rhs, lvl); // ist das so gemeint im Aufgabenblatt?
+        double residual = l2_norm(grid->data_, rhs, grid_size, step_size);
+        cout << residual << endl;
+    }
+    // TODO: stop timing
 
-    //Grid *big = small->interpolate();
-    //big->printGrid();
-    delete test;
-    delete []rhs;
-    //delete small;
-    //delete big;
+
     // ===== TESTS =====
-
-
-   
-
-    //double residual = residual(grid->data_, rhs, grid_size, step_size);
 
     // === Output ===
     // # x y u(x,y)
@@ -157,10 +156,14 @@ int main(int argc, char* argv[]) {
     //int step_size = 17; //TODO: change to correct step size (grid->getStepSize())
     for (int col = 0; col < grid_size; col++) {
         for (int row = 0; row < grid_size; row++) {
-            fileO << col*step_size << " " << row*step_size << " " << endl; //TODO: << grid->data_[row*stepsize + col] << endl;
+            fileO << col*step_size << " " << row*step_size << " " << grid->data_[row*grid_size + col] << endl;
         }
     }
     fileO.close();
+
+    delete grid;
+    delete []rhs;
+    delete solution;
 
     return 0;
 }
