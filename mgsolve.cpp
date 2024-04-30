@@ -22,9 +22,25 @@ double residual(double *data, double *rhs, int gridsize, double stepsize) {
         }
     }
     int inner_points = gridsize-2;
-    double factor = 1.0/(inner_points*inner_points);
+    double factor = 1.0/(inner_points*inner_points); //TODO: Wurzel aus 1/n ? 
     return sqrt(factor*sum);
 }
+
+void gauss_seidel_smoother(double *data,double *rhs, int gridsize,double stepsize){ 
+    double alpha = 4.0/(stepsize*stepsize);
+    double beta = 1.0/(stepsize*stepsize);
+    for (int row = 1; row < ny; ++row) { // row is y col is x
+        for (int col = 1; col < nx; ++col) {    // nicht ueber Rand iterieren
+                data[col + row*gridsize] = (1/alpha)*
+                        (rhs[col+row*gridsize]
+                        +beta*data[(col-1) + row*gridsize]
+                        +beta*data[(col+1) + row*gridsize]
+                        +beta*data[col + (row-1)*gridsize]
+                        +beta*data[col + (row+1)*gridsize]);
+        }
+    }
+}
+
 
 
 int main(int argc, char* argv[]) {
@@ -46,7 +62,8 @@ int main(int argc, char* argv[]) {
     double *rhs = new double[grid_size*grid_size];
     for (int y = 0; y < grid_size; y++) {
         for (int x = 0; x < grid_size; x++) {
-            rhs[x + y*grid_size] = cos(M_PI*x*step_size)*cos(M_PI*y*step_size);
+            //rechte Seite sollte f(x,y) sein und nicht g(x,y) oder? 
+            rhs[x + y*grid_size] =2*M_PI*M_PI*cos(M_PI*x*step_size)*cos(M_PI*y*step_size);
         }
     }
 
@@ -66,6 +83,28 @@ int main(int argc, char* argv[]) {
     // ===== TESTS =====
 
     //TODO: Implement proper V-Cycles (aka implement gaus seidel again..)
+    // Orientiert an Tafelübung und Wikipedia Pseudo-code
+    // uh = V-Cycle(uh, f, h)
+
+
+    // Presmoothing of Au = b -->uh = Gauss-Seidel(uh, f, h)
+    gauss_seidel_smoother(test->data_, rhs, grid_size, step_size)
+
+    //Compute Residual r = b-Auh 
+
+    //restrict residual to level l-1  
+
+    //leeres Gitter anlegen eps--> so groß wie restricted size //set u=0 on l-1 --> auch Randbedingungen werden 0
+
+    // Abbruchbedingung Rekursion: wenn kleinste Gittergröße erreicht ist
+
+    //sonst: eps = V-Cycle(leeres Gitter eps, restricted Gitter, 2*h) --> Rekursion
+
+    // Ab hier wieder aufwärts in der Rekurison 
+    // uh = uh + Interpolation(eps)
+    // correct: uh = smoothing(uh, f, h)
+
+
 
     //double residual = residual(grid->data_, rhs, grid_size, step_size);
 
