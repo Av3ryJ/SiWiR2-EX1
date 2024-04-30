@@ -39,11 +39,11 @@ void calculate_residuum(double *res, double *data, double *rhs, int gridsize, in
     }
 } 
 
-void gauss_seidel_smoother(double *data,double *rhs, int gridsize,double stepsize){ 
+void gauss_seidel_smoother(double *data,double *rhs, int gridsize, double stepsize){ 
     double alpha = 4.0/(stepsize*stepsize);
     double beta = 1.0/(stepsize*stepsize);
-    for (int row = 1; row < ny; ++row) { // row is y col is x
-        for (int col = 1; col < nx; ++col) {    // nicht ueber Rand iterieren
+    for (int row = 1; row < gridsize-1; ++row) { // row is y col is x
+        for (int col = 1; col < gridsize-1; ++col) {    // nicht ueber Rand iterieren
                 data[col + row*gridsize] = (1/alpha)*
                         (rhs[col+row*gridsize]
                         +beta*data[(col-1) + row*gridsize]
@@ -55,45 +55,48 @@ void gauss_seidel_smoother(double *data,double *rhs, int gridsize,double stepsiz
 }
 
 void addInterpolation(double *data,double *interpol, int gridsize){
-     for (int row = 1; row < ny; ++row) { 
-        for (int col = 1; col < nx; ++col) {
+     for (int row = 1; row < gridsize-1; ++row) { 
+        for (int col = 1; col < gridsize-1; ++col) {
             data[col+row*gridsize] += interpol[col+row*gridsize]; 
         }
     }    
 }
 
- void multigrid(double *u, double *rhs, int stepsize, int gridsize, int lvl){
+ void multigrid(double *u, double *rhs, int lvl){
+
+    int gridsize = (int) pow(2,lvl) + 1;
+    double stepsize = 1./(gridsize-1);
 
     // Presmoothing of Au = b -->uh = Gauss-Seidel(uh, f, h)
     gauss_seidel_smoother(u, rhs, gridsize, stepsize);
 
     //Compute Residual r = b-Auh 
-     Grid *res = new Grid(lvl);
+     Grid *res = new Grid(lvl, true);
      calculate_residuum(res->data_, u, rhs, gridsize, stepsize);
 
     //restrict residual to level l-1  
-    Grid *restricted = res->restrict;
+    Grid *restricted = res->restrict();
 
     //leeres Gitter anlegen eps--> so groß wie restricted size //set u=0 on l-1 --> auch Randbedingungen werden 0
-    Grid *eps = new Grid(restricted->level_); //hier muss alles 0 sein!
+    Grid *eps = new Grid(lvl-1, false); //hier muss alles 0 sein!
 
     // Abbruchbedingung Rekursion: wenn kleinste Gittergröße erreicht ist
     //sonst: eps = V-Cycle(leeres Gitter eps, restricted Gitter, 2*h) --> Rekursion
-    if(lvl==1){
-        eps= u; //nicht sicher 
-    }else{
-        eps = multigrid(eps, restricted, 2*stepsize);
+    if(lvl==1) {
+        eps->data_ = u; //nicht sicher 
+    } else {
+        multigrid(eps->data_, restricted->data_, lvl-1);
     } 
     // Ab hier wieder aufwärts in der Rekurison 
     //TODO Funktion zur Addition 
-    Grid *eps2 = eps->interpolate;
+    Grid *eps2 = eps->interpolate();
     //correction
-    addInterpolation(u, eps2->data_, gridsize)
+    addInterpolation(u, eps2->data_, gridsize);
 
     // postsmoothing(uh, f, h)
-    gauss_seidel_smoother(u,rhs,gridsize, stepsize)
+    gauss_seidel_smoother(u,rhs,gridsize, stepsize);
 
-    }
+}
 
 
 
@@ -121,10 +124,10 @@ int main(int argc, char* argv[]) {
     }
 
     // ===== TESTS =====
-    Grid *test = new Grid(lvl);
+    Grid *test = new Grid(lvl, true);
     test->printGrid();
 
-    multigrid(test->data_, rhs, step_size, grid_size, lvl);
+    multigrid(test->data_, rhs, lvl);
 
     //Grid *small = test->restrict();
     //small->printGrid();
