@@ -5,18 +5,30 @@
 #include <iostream>
 #include <iomanip>
 
-Grid::Grid(int lvl) {
+Grid::Grid(int lvl, bool initBoundary) {
     this->level_ = lvl;
     this->size_ = (int) pow(2,lvl) + 1;
     this->step_size_ = 1./(size_-1);
     this->data_ = new double[size_*size_];
-    for (int y = 0; y < size_; y++) {
-        for (int x = 0; x < size_; x++) {
-            int absolute_position = x + (size_*y);
-            double value = (x==0 || y==0 || x==size_-1 || y==size_-1) ? cos(M_PI*x*step_size_)*cos(M_PI*y*step_size_) : 0.;
-            this->data_[absolute_position] = value;
+    if (initBoundary) {
+      this->initBoundary();
+    }
+    // init inner points
+    for (int y = 1; y < size_-1; y++) {
+        for (int x = -1; x < size_-1; x++) {
+            this->data_[x + (size_*y)] = 0;
         }
     }
+}
+
+
+void Grid::initBoundary() {                                                    
+  for (int x = 0; x < size_; x++) {                                            
+    this->data_[x] = cos(M_PI*x*step_size_); // lower                          
+    this->data_[x*size_] = cos(M_PI*x*step_size_); // left                     
+    this->data_[(x+1)*size_ - 1] = -1*cos(M_PI*x*step_size_); // right         
+    this->data_[(size_-1)*size_ + x] = -1*cos(M_PI*x*step_size_); // upper     
+  }                                                                            
 }
 
 int Grid::getSize() const {
@@ -37,7 +49,7 @@ void Grid::printGrid() {
 }
 
 Grid *Grid::restrict() {
-    Grid *smaller = new Grid(this->level_-1);
+    Grid *smaller = new Grid(this->level_-1, true);
     smaller->weightedRestriction(this);
     return smaller;
 }
@@ -66,7 +78,7 @@ void Grid::weightedRestriction(Grid *bigger) {
 }
 
 Grid *Grid::interpolate() {
-    Grid *bigger = new Grid(this->level_+1);
+    Grid *bigger = new Grid(this->level_+1, true);
     bigger->interpolation(this);
     return bigger;
 }

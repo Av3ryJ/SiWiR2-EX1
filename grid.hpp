@@ -6,7 +6,8 @@ class Grid {
 public:
     double *data_;
 
-    explicit Grid(int lvl);
+    explicit Grid(int lvl, bool initBoundary);
+    void initBoundary(); 
 
     int getSize() const;
     void printGrid();
