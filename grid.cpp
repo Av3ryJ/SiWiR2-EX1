@@ -5,30 +5,45 @@
 #include <iostream>
 #include <iomanip>
 
-Grid::Grid(int lvl, bool initBoundary) {
+Grid::Grid(int lvl, bool initBoundary, bool initInnerPoints) {
     this->level_ = lvl;
     this->size_ = (int) pow(2,lvl) + 1;
     this->step_size_ = 1./(size_-1);
     this->data_ = new double[size_*size_];
-    if (initBoundary) {
-      this->initBoundary();
-    }
+    this->initializedBoundary_ = initBoundary;
+    this->initializedInnerPoints_ = initInnerPoints;
+
+    //init boundary
+    this->initBoundary(initBoundary);
+
     // init inner points
-    for (int y = 1; y < size_-1; y++) {
-        for (int x = -1; x < size_-1; x++) {
-            this->data_[x + (size_*y)] = 0;
+    if (initInnerPoints) {
+        for (int y = 1; y < size_-1; y++) {
+            for (int x = 1; x < size_-1; x++) {
+                this->data_[x + (size_*y)] = 0;
+            }
         }
     }
 }
 
 
-void Grid::initBoundary() {                                                    
-  for (int x = 0; x < size_; x++) {                                            
-    this->data_[x] = cos(M_PI*x*step_size_); // lower                          
-    this->data_[x*size_] = cos(M_PI*x*step_size_); // left                     
-    this->data_[(x+1)*size_ - 1] = -1*cos(M_PI*x*step_size_); // right         
-    this->data_[(size_-1)*size_ + x] = -1*cos(M_PI*x*step_size_); // upper     
-  }                                                                            
+void Grid::initBoundary(bool init) {
+    if (init) {
+        for (int x = 0; x < size_; x++) {
+            this->data_[x] = cos(M_PI * x * step_size_); // lower
+            this->data_[x * size_] = cos(M_PI * x * step_size_); // left
+            this->data_[(x + 1) * size_ - 1] = -1 * cos(M_PI * x * step_size_); // right
+            this->data_[(size_ - 1) * size_ + x] = -1 * cos(M_PI * x * step_size_); // upper
+        }
+    }
+    else {
+        for (int x = 0; x < size_; x++) {
+            this->data_[x] = 0; // lower
+            this->data_[x * size_] = 0; // left
+            this->data_[(x + 1) * size_ - 1] = 0; // right
+            this->data_[(size_ - 1) * size_ + x] = 0; // upper
+        }
+    }
 }
 
 int Grid::getSize() const {
@@ -42,14 +57,15 @@ Grid::~Grid() {
 void Grid::printGrid() {
     for (int y = 0; y < size_; y++) {
         for (int x = 0; x < size_; x++) {
-            std::cout << this->data_[x + (size_*y)] << std::setprecision(2) << "\t";
+            std::cout << this->data_[x + (size_*y)] << std::setprecision(4) << "\t";
         }
         std::cout << std::endl;
     }
+    std::cout << std::endl;
 }
 
 Grid *Grid::restrict() {
-    Grid *smaller = new Grid(this->level_-1, true);
+    Grid *smaller = new Grid(this->level_-1, this->initializedBoundary_, false);
     smaller->weightedRestriction(this);
     return smaller;
 }
@@ -78,7 +94,7 @@ void Grid::weightedRestriction(Grid *bigger) {
 }
 
 Grid *Grid::interpolate() {
-    Grid *bigger = new Grid(this->level_+1, true);
+    Grid *bigger = new Grid(this->level_+1, this->initializedBoundary_, false);
     bigger->interpolation(this);
     return bigger;
 }

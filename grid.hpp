@@ -6,8 +6,8 @@ class Grid {
 public:
     double *data_;
 
-    explicit Grid(int lvl, bool initBoundary);
-    void initBoundary(); 
+    explicit Grid(int lvl, bool initBoundary, bool initInnerPoints);
+    void initBoundary(bool init);
 
     int getSize() const;
     void printGrid();
@@ -25,5 +25,7 @@ private:
     int level_;
     int size_;
     double step_size_;
+    bool initializedBoundary_;
+    bool initializedInnerPoints_;
 };
 #endif //SIWIR2_EX1_GRID_HPP
