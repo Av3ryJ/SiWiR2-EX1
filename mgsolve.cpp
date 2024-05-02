@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "grid.hpp"
+#include "Timer.h"
 
 using namespace std;
 
@@ -21,9 +22,7 @@ double l2_norm(double *data, double *rhs, int gridsize, double stepsize) {
             sum += residual*residual;
         }
     }
-    int inner_points = gridsize-2;
-    double factor = 1.0/(inner_points*inner_points); 
-    return sqrt(factor*sum);
+    return sqrt(sum);
 }
 void calculate_residuum(double *res, double *data, double *rhs, int gridsize, double stepsize){
     double alpha = 4.0/(stepsize*stepsize);
@@ -62,17 +61,18 @@ void addInterpolation(double *data,double *interpol, int gridsize){
     }    
 }
 
- void multigrid(double *u, double *rhs, int lvl){
+void multigrid(double *u, double *rhs, int lvl){
 
     int gridsize = (int) pow(2,lvl) + 1;
     double stepsize = 1./(gridsize-1);
 
-    // Presmoothing of Au = b -->uh = Gauss-Seidel(uh, f, h), TODO: laut Aufgabe 2 mal?
+    // Presmoothing of Au = b -->uh = Gauss-Seidel(uh, f, h),
+    gauss_seidel_smoother(u, rhs, gridsize, stepsize);
     gauss_seidel_smoother(u, rhs, gridsize, stepsize);
 
     //Compute Residual r = b-Auh 
-     Grid *res = new Grid(lvl, false, false);
-     calculate_residuum(res->data_, u, rhs, gridsize, stepsize);
+    Grid *res = new Grid(lvl, false, false);
+    calculate_residuum(res->data_, u, rhs, gridsize, stepsize);
 
     //restrict residual to level l-1  
     Grid *restricted = res->restrict();
@@ -87,15 +87,14 @@ void addInterpolation(double *data,double *interpol, int gridsize){
     } else {
         multigrid(eps->data_, restricted->data_, lvl-1);
     } 
-    // Ab hier wieder aufwärts in der Rekurison 
-    //TODO Funktion zur Addition 
+    // Ab hier wieder aufwärts in der Rekurison
     Grid *eps2 = eps->interpolate();
     //correction
     addInterpolation(u, eps2->data_, gridsize);
 
     // postsmoothing(uh, f, h)
     gauss_seidel_smoother(u,rhs,gridsize, stepsize);
-
+    gauss_seidel_smoother(u,rhs,gridsize, stepsize);
 }
 
 
@@ -118,7 +117,7 @@ int main(int argc, char* argv[]) {
     //right-hand side vector
     double *rhs = new double[grid_size*grid_size];
     // Grid with solution
-    Grid *solution = new Grid(lvl, true, false);
+    Grid *solution = new Grid(lvl, false, false);
     //initialize both rhs and solution
     for (int y = 0; y < grid_size; y++) {
         for (int x = 0; x < grid_size; x++) {
@@ -130,16 +129,24 @@ int main(int argc, char* argv[]) {
     // ===== TESTS =====
 
     Grid *grid = new Grid(lvl, true, true);
-    grid->printGrid();
 
-    // TODO: start timing
+    double residual_of_last_iteration = l2_norm(grid->data_, rhs, grid_size, step_size);
+
+    //Timing start
+    double time = 100.0;
+    siwir::Timer timer;
     //perform given number of iterations
     for (int i = 0; i < iterations; i++) {
-        multigrid(grid->data_, rhs, lvl); // ist das so gemeint im Aufgabenblatt?
+        multigrid(grid->data_, rhs, lvl);
         double residual = l2_norm(grid->data_, rhs, grid_size, step_size);
-        cout << residual << endl;
+        double discrete_residual = residual / sqrt(number_of_unknowns);
+        double convergence_factor = residual / residual_of_last_iteration;
+        residual_of_last_iteration = residual;
+        cout << "iteration " << i+1 << ": discrete residual norm = " << discrete_residual << "; convergence factor = " << convergence_factor << endl;
     }
-    // TODO: stop timing
+    //Timing stoppen & ausgeben
+    time = std::min(time, timer.elapsed());
+    cout << endl << "runtime: " << time << endl;
 
 
     // ===== TESTS =====
@@ -152,8 +159,6 @@ int main(int argc, char* argv[]) {
     //x und y Werte müssen in dem definierten Bereich liegen -> [0,1] und [0,1]
     std::ofstream fileO("solution.txt");
     fileO << "# x y u(x,y)"<< std::endl;
-    //int grid_size = 17; //TODO: change to correct grid size (grid->getSize())
-    //int step_size = 17; //TODO: change to correct step size (grid->getStepSize())
     for (int col = 0; col < grid_size; col++) {
         for (int row = 0; row < grid_size; row++) {
             fileO << col*step_size << " " << row*step_size << " " << grid->data_[row*grid_size + col] << endl;
