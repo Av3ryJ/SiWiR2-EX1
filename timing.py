@@ -3,9 +3,9 @@ import os.path as p
 import json
 import re
 
-binary = "./mgsolve"
+binary = "./SiWiR2_EX1"
 levels = [3, 4, 5, 6, 7, 8]
-number_of_iterations = 10
+number_of_iterations = 15
 
 json_path = "times.json"
 time_json = {level: {} for level in levels}
@@ -19,7 +19,7 @@ def run_bin(level):
 def parse_output(output):
     output_format = {"iterations": 0, "time": 0.0, "norms": []}
     regex_string_lvl_iter = r"Level: (\d+).* Iterations: (\d*)"
-    regex_string_time = r"runtime: ([\d|\.]*)"
+    regex_string_time = r"runtime: ([\d|\.|e|-]*)"
 
     temp = re.search(regex_string_lvl_iter, output)
     # output_format["level"] = int(temp.group(1))
