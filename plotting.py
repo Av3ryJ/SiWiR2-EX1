@@ -21,13 +21,13 @@ def get_array_of_times():
 def get_array_of_err():
     out = []
     for lvl in levels:
-        out.append(time_json[str(lvl)]["error"])
+        out.append(time_json[str(lvl)]["err"])
     return out
 
 
 def plot_all():
-    times = get_array_of_times()
-    plt.plot(levels, np.array(times))
+    times = get_array_of_err()
+    plt.loglog(levels, np.array(times))
 
     plt.title("Runtime for different levels")
     plt.xlabel("Level")
