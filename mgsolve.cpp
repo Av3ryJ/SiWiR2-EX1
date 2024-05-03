@@ -137,12 +137,6 @@ int main(int argc, char* argv[]) {
 
     Grid *grid = new Grid(lvl, true, true);
 
-    for (int y = 1; y < grid_size-1; y++) {
-        for (int x = 1; x < grid_size-1; x++) {
-            grid->data_[x + y*grid_size] = 10;
-        }
-    }
-
     double residual_of_last_iteration = l2_norm(grid->data_, rhs, grid_size, step_size);
 
     //Timing start
@@ -159,9 +153,18 @@ int main(int argc, char* argv[]) {
     }
     //Timing stoppen & ausgeben
     time = std::min(time, timer.elapsed());
-    cout << endl << "runtime: " << time << endl;
 
-    // ===== TESTS =====
+    // compute total error
+    double disc_l2_norm_of_error = 0;
+    for (int y = 1; y < grid_size; y++) {
+        for (int x = 1; x < grid_size; x++) {
+            double err = grid->data_[x + grid_size*y] - solution->data_[x + grid_size*y];
+            disc_l2_norm_of_error += err * err;
+        }
+    }
+    disc_l2_norm_of_error = sqrt(disc_l2_norm_of_error/(number_of_unknowns));
+
+    cout << endl << "runtime: " << time << "; total error: " << disc_l2_norm_of_error << endl;
 
     // === Output ===
     // # x y u(x,y)

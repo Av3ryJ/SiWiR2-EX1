@@ -17,15 +17,16 @@ def run_bin(level):
 
 
 def parse_output(output):
-    output_format = {"iterations": 0, "time": 0.0, "norms": []}
+    output_format = {"iterations": 0, "time": 0.0, "err": 0.0, "norms": []}
     regex_string_lvl_iter = r"Level: (\d+).* Iterations: (\d*)"
-    regex_string_time = r"runtime: ([\d|\.|e|-]*)"
+    regex_string_time_err = r"runtime: ([\d|\.|e|-]*); total error: ([\d|\.|e|-]*)"
 
     temp = re.search(regex_string_lvl_iter, output)
     # output_format["level"] = int(temp.group(1))
     output_format["iterations"] = int(temp.group(2))
-    temp = re.search(regex_string_time, output)
+    temp = re.search(regex_string_time_err, output)
     output_format["time"] = float(temp.group(1))
+    output_format["err"] = float(temp.group(2))
 
     for i in range(1, output_format["iterations"]+1):
         search_str = rf"iteration {i}: discrete residual norm = (.*);"
@@ -50,7 +51,10 @@ def time_all():
 if __name__ == '__main__':
 
     if p.exists(json_path):
+        print("times.json already exists!")
         with open(json_path, 'r') as file:
             time_json = json.load(file)
     else:
+        print("Timing...")
         time_all()
+        print("---Done---")
