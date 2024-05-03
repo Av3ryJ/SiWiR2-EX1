@@ -24,11 +24,13 @@ double l2_norm(double *data, double *rhs, int gridsize, double stepsize) {
     }
     return sqrt(sum);
 }
-void calculate_residuum(double *res, double *data, double *rhs, int gridsize, double stepsize){
+void calculate_residuum(double *res, double *data, double *rhs, int gridsize, double stepsize) {
+    //weights
     double alpha = 4.0/(stepsize*stepsize);
     double beta = 1.0/(stepsize*stepsize);
     for (int row = 1; row < gridsize-1; row++) {
         for (int col = 1; col < gridsize-1; col++) {
+            // r = f - A*u
             res[row*gridsize+col] = rhs[row*gridsize + col] - alpha*data[row*gridsize + col]
                               +beta*data[(col-1) + row*gridsize]
                               +beta*data[(col+1) + row*gridsize]
@@ -38,12 +40,13 @@ void calculate_residuum(double *res, double *data, double *rhs, int gridsize, do
     }
 } 
 
-void gauss_seidel_smoother(double *data,double *rhs, int gridsize, double stepsize){ 
+void gauss_seidel_smoother(double *data, double *rhs, int gridsize, double stepsize) {
+    //weights
     double alpha = 4.0/(stepsize*stepsize);
     double beta = 1.0/(stepsize*stepsize);
     for (int row = 1; row < gridsize-1; ++row) { // row is y col is x
         for (int col = 1; col < gridsize-1; ++col) {    // nicht ueber Rand iterieren
-                data[col + row*gridsize] = (1/alpha)*
+                data[col + row*gridsize] = (1./alpha)*
                         (rhs[col+row*gridsize]
                         +beta*data[(col-1) + row*gridsize]
                         +beta*data[(col+1) + row*gridsize]
@@ -53,16 +56,18 @@ void gauss_seidel_smoother(double *data,double *rhs, int gridsize, double stepsi
     }
 }
 
-void addInterpolation(double *data,double *interpol, int gridsize){
+void addInterpolation(double *data, double *interpol, int gridsize) {
      for (int row = 1; row < gridsize-1; ++row) { 
         for (int col = 1; col < gridsize-1; ++col) {
+            // add two data grids, save in first function argument
             data[col+row*gridsize] += interpol[col+row*gridsize]; 
         }
     }    
 }
 
-void multigrid(double *u, double *rhs, int lvl){
+void multigrid(double *u, double *rhs, int lvl) {
 
+    //compute grid and stepsize from level lvl
     int gridsize = (int) pow(2,lvl) + 1;
     double stepsize = 1./(gridsize-1);
 
@@ -77,19 +82,21 @@ void multigrid(double *u, double *rhs, int lvl){
     //restrict residual to level l-1  
     Grid *restricted = res->restrict();
 
-    //leeres Gitter anlegen eps--> so groß wie restricted size //set u=0 on l-1 --> auch Randbedingungen werden 0
-    Grid *eps = new Grid(lvl-1, false, true); //hier muss alles 0 sein!
+    //empty grid eps--> same size as restricted
+    Grid *eps = new Grid(lvl-1, false, true); //init with all zeros
 
-    // Abbruchbedingung Rekursion: wenn kleinste Gittergröße erreicht ist
-    //sonst: eps = V-Cycle(leeres Gitter eps, restricted Gitter, 2*h) --> Rekursion
-    if(lvl==1) {
-        eps->data_ = u; //nicht sicher 
-    } else {
+    if (lvl == 2) {
+        // base case: coarsest grid -> exact solution on 3x3 grid with 1 inner gridpoint
+        eps->data_[4] = stepsize*stepsize*restricted->data_[4]/4.;
+    }
+    else {
+        //recursion: call multigrid with eps, restricted and coarser level
         multigrid(eps->data_, restricted->data_, lvl-1);
-    } 
-    // Ab hier wieder aufwärts in der Rekurison
+    }
+
+    // interpolate eps to finer level
     Grid *eps2 = eps->interpolate();
-    //correction
+    // add interpolated eps to current approximation for correction
     addInterpolation(u, eps2->data_, gridsize);
 
     // postsmoothing(uh, f, h)
@@ -126,9 +133,15 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // ===== TESTS =====
+    // ===== start multigrid algorithm =====
 
     Grid *grid = new Grid(lvl, true, true);
+
+    for (int y = 1; y < grid_size-1; y++) {
+        for (int x = 1; x < grid_size-1; x++) {
+            grid->data_[x + y*grid_size] = 10;
+        }
+    }
 
     double residual_of_last_iteration = l2_norm(grid->data_, rhs, grid_size, step_size);
 
@@ -147,7 +160,6 @@ int main(int argc, char* argv[]) {
     //Timing stoppen & ausgeben
     time = std::min(time, timer.elapsed());
     cout << endl << "runtime: " << time << endl;
-
 
     // ===== TESTS =====
 

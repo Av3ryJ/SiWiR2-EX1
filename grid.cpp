@@ -13,10 +13,10 @@ Grid::Grid(int lvl, bool initBoundary, bool initInnerPoints) {
     this->initializedBoundary_ = initBoundary;
     this->initializedInnerPoints_ = initInnerPoints;
 
-    //init boundary
+    //init boundary: if initBoundary is True: fill with boundary values from exercise sheet; else: fill with zeros
     this->initBoundary(initBoundary);
 
-    // init inner points
+    // init inner points only if initInnerPoints is True
     if (initInnerPoints) {
         for (int y = 1; y < size_-1; y++) {
             for (int x = 1; x < size_-1; x++) {
@@ -65,7 +65,9 @@ void Grid::printGrid() {
 }
 
 Grid *Grid::restrict() {
+    // create new grid with level l-1 for coarser grid
     Grid *smaller = new Grid(this->level_-1, this->initializedBoundary_, false);
+    // fill coarser grid with values
     smaller->weightedRestriction(this);
     return smaller;
 }
@@ -74,8 +76,9 @@ void Grid::weightedRestriction(Grid *bigger) {
     int size_big = bigger->getSize();
     double *big_d = bigger->data_;
     //go over smaller (inner) grid and restrict from bigger one
-    for (int x = 1; x < size_-1; x++) {
-        for (int y = 1; y < size_-1; y++) {
+    for (int y = 1; y < size_-1; y++) {
+        for (int x = 1; x < size_-1; x++) {
+            //find correct indices in both grids
             int absolute_position_small = x + (size_*y);
             int positionBig = 2 * x + (size_big * y * 2);
                                         //top left                   top right
@@ -94,7 +97,9 @@ void Grid::weightedRestriction(Grid *bigger) {
 }
 
 Grid *Grid::interpolate() {
+    //create new grid with level+1 for finer grid
     Grid *bigger = new Grid(this->level_+1, this->initializedBoundary_, false);
+    //fill finer grid with values
     bigger->interpolation(this);
     return bigger;
 }
@@ -103,28 +108,28 @@ void Grid::interpolation(Grid *smaller) {
     int size_small = smaller->getSize();
     double *small_d = smaller->data_;
     // go over smaller grid and copy/interpolate to big one
-    bool xOdd = true;
+    bool yOdd = true;
     // Willst du hier x und y vertauschen, vertausche auch die x,yOdd änderung!!!!!
-    for (int x = 1; x < size_-1; x++, xOdd = !xOdd) {
-        bool yOdd = true;
-        for (int y = 1; y < size_-1; y++, yOdd = !yOdd) {
+    for (int y = 1; y < size_-1; y++, yOdd = !yOdd) {
+        bool xOdd = true;
+        for (int x = 1; x < size_-1; x++, xOdd = !xOdd) {
             int positionBig = x + (size_ * y);
             double value;
-            if (xOdd) { //nach Rücksprache mit Tutor hab ich die Faktoren angepasst so wie es im Script steht
-                if (yOdd) { //both odd -> btw 4
+            if (xOdd) {
+                if (yOdd) { //both odd -> value between 4 points of coarser grid -> weighted sum of 4 points
                                     // top left                                     bottom left
                     value = 0.125 * (small_d[(x-1 + (size_small*(y-1)))/2] + small_d[(x+1 + (size_small*(y-1)))/2]
                                     // bottom right                                 top right
                             + small_d[(x-1 + (size_small*(y+1)))/2] + small_d[(x+1 + (size_small*(y+1)))/2]);
                 }
-                else { // xOdd, yEven -> horizontal btw 2
+                else { // xOdd, yEven -> horizontal between 2 -> weighted sum of two adjacent points
                     value = 0.25 * (small_d[((x-1) + (size_small * y))/2] + small_d[((x+1) + (size_small * y))/2]);
                 }
             }
-            else if (yOdd) { // xEven, yOdd -> vertical btw 2
+            else if (yOdd) { // xEven, yOdd -> vertical between 2 points -> weighted sum of two adjacent points
                 value = 0.25 * (small_d[(x + (size_small * (y-1)))/2] + small_d[(x + (size_small * (y+1)))/2]);
             }
-            else { //both even -> on point
+            else { //both even -> on point -> weight with value from self
                 value = 0.5*small_d[x/2 + (size_small * y/2)];
             }
             this->data_[positionBig] = value;
