@@ -27,11 +27,11 @@ def get_array_of_err():
 
 def plot_all():
     times = get_array_of_err()
-    plt.loglog(levels, np.array(times))
+    plt.loglog(pow(2, np.array(levels)), np.array(times))
 
-    plt.title("Runtime for different levels")
-    plt.xlabel("Level")
-    plt.ylabel("Runtime in s")
+    plt.title("Loglog graph of error vs mesh-width")
+    plt.xlabel("mesh width")
+    plt.ylabel("Final Error")
     plt.show()
 
 
