@@ -85,7 +85,7 @@ void multigrid(double *u, double *rhs, int lvl) {
     //empty grid eps--> same size as restricted
     Grid *eps = new Grid(lvl-1, false, true); //init with all zeros
 
-    if (lvl == 2) {
+    if (lvl == 2) { 
         // base case: coarsest grid -> exact solution on 3x3 grid with 1 inner gridpoint
         eps->data_[4] = stepsize*stepsize*restricted->data_[4]/4.;
     }
@@ -100,7 +100,6 @@ void multigrid(double *u, double *rhs, int lvl) {
     addInterpolation(u, eps2->data_, gridsize);
 
     // postsmoothing(uh, f, h)
-    gauss_seidel_smoother(u,rhs,gridsize, stepsize);
     gauss_seidel_smoother(u,rhs,gridsize, stepsize);
 }
 
@@ -172,14 +171,22 @@ int main(int argc, char* argv[]) {
     // .. .. ..
 
     //x und y Werte müssen in dem definierten Bereich liegen -> [0,1] und [0,1]
-    std::ofstream fileO("solution.txt");
+   /* std::ofstream fileO("solution.txt");
     fileO << "# x y u(x,y)"<< std::endl;
     for (int col = 0; col < grid_size; col++) {
         for (int row = 0; row < grid_size; row++) {
             fileO << col*step_size << " " << row*step_size << " " << grid->data_[row*grid_size + col] << endl;
         }
     }
-    fileO.close();
+    */
+    std::ofstream file0("solution.txt");
+    for (int i = 0; i < grid_size; ++i) {
+        for (int j = 0; j < grid_size; ++j) {
+            file0 << i * step_size << " " << j * step_size << " " << grid->data_[i * grid_size + j] << "\n";
+        }
+        file0 << "\n";  // Gnuplot 3D data requires a blank line between rows
+    }
+    file0.close();
 
     delete grid;
     delete []rhs;
