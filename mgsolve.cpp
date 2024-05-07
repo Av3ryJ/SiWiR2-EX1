@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
     std::ofstream file0("solution.txt");
     for (int i = 0; i < grid_size; ++i) {
         for (int j = 0; j < grid_size; ++j) {
-            file0 << i * step_size << " " << j * step_size << " " << grid->data_[i * grid_size + j] << "\n";
+            file0 << j * step_size << " " << i * step_size << " " << grid->data_[i * grid_size + j] << "\n";
         }
         file0 << "\n";  // Gnuplot 3D data requires a blank line between rows
     }
