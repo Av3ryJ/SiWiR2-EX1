@@ -40,5 +40,7 @@ if __name__ == '__main__':
         with open(json_path, 'r') as file:
             time_json = json.load(file)
         plot_all()
+        for i in range(3,9):
+            print(pow(2,i*-1))
     else:
         print("no json you idiot run timing.py first")
